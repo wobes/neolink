@@ -58,6 +58,9 @@ address = "192.168.1.187:9000"
 # If your device has user connection limits try a single stream instead.
 # stream = "mainStream"
 
+# Push notifications (defaults to false):
+# push_notifications = false
+
 # By default neolink will use any means to connect to the camera
 # from a UID
 # This include relaying via reolink servers

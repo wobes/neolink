@@ -62,9 +62,10 @@ impl PushNotiThread {
         sender: &MpscSender<PnRequest>,
         pn_request_rx: &mut MpscReceiver<PnRequest>,
     ) -> AnyResult<()> {
+        let mut retry_delay = Duration::from_secs(3);
         loop {
-            // Short wait on start/retry
-            sleep(Duration::from_secs(3)).await;
+            // Wait on start/retry
+            sleep(retry_delay).await;
 
             let sender_id = "743639030586"; // andriod
                                             // let sender_id = "696841269229"; // ios
@@ -110,11 +111,13 @@ impl PushNotiThread {
                     fs::read_to_string(token_path).map(|v| toml::from_str::<Registration>(&v))
                 }) {
                 log::debug!("Loaded push notification token");
+                retry_delay = Duration::from_secs(3);
                 registration
             } else {
                 log::debug!("Registering new push notification token");
                 match fcm_push_listener::register(sender_id).await {
                     Ok(registration) => {
+                        retry_delay = Duration::from_secs(3);
                         let new_token = toml::to_string(&registration)
                             .with_context(|| "Unable to serialise fcm token")?;
                         if let Some(Err(e)) = token_path
@@ -131,7 +134,12 @@ impl PushNotiThread {
                         registration
                     }
                     Err(e) => {
-                        log::warn!("Issue connecting to push notifications server: {:?}", e);
+                        log::warn!(
+                            "Issue connecting to push notifications server: {:?}. Retrying in {:?}. Note: Push notifications may be unavailable due to deprecated Google FCM APIs; disable with `push_notifications = false` in camera config.",
+                            e,
+                            retry_delay
+                        );
+                        retry_delay = std::cmp::min(retry_delay * 2, Duration::from_secs(300));
                         continue;
                     }
                 }

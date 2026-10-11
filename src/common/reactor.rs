@@ -39,7 +39,12 @@ pub(crate) struct NeoReactor {
 }
 
 impl NeoReactor {
-    pub(crate) async fn new(config: Config) -> Self {
+    pub(crate) async fn new(mut config: Config) -> Self {
+        if let Some(push) = config.push_notifications {
+            for cam in &mut config.cameras {
+                cam.push_notifications = push;
+            }
+        }
         let (commad_tx, mut command_rx) = mpsc(100);
         #[cfg(feature = "pushnoti")]
         let (push_noti, mut pn_rx) = mpsc(10);
@@ -96,7 +101,12 @@ impl NeoReactor {
                                 };
                                 let _ = sender.send(new);
                             },
-                            NeoReactorCommand::UpdateConfig(new_conf, reply) => {
+                            NeoReactorCommand::UpdateConfig(mut new_conf, reply) => {
+                                if let Some(push) = new_conf.push_notifications {
+                                    for cam in &mut new_conf.cameras {
+                                        cam.push_notifications = push;
+                                    }
+                                }
                                 // Shutdown or Notify instances of a change
                                 let mut names = new_conf.cameras.iter().filter(|cam_conf| cam_conf.enabled).map(|cam_conf| (cam_conf.name.clone(), cam_conf.clone())).collect::<HashMap<_,_>>();
                                 // Remove those no longer in the config

@@ -49,6 +49,15 @@ pub(crate) struct Config {
     #[validate(nested)]
     #[serde(default)]
     pub(crate) users: Vec<UserConfig>,
+
+    #[serde(
+        default,
+        alias = "push",
+        alias = "push_noti",
+        alias = "push_notification",
+        alias = "notifications"
+    )]
+    pub(crate) push_notifications: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Validate, PartialEq, Eq)]
@@ -213,7 +222,13 @@ pub(crate) struct CameraConfig {
     )]
     pub(crate) max_discovery_retries: usize,
 
-    #[serde(default = "default_true", alias = "push", alias = "push_noti")]
+    #[serde(
+        default = "default_false",
+        alias = "push",
+        alias = "push_noti",
+        alias = "push_notification",
+        alias = "notifications"
+    )]
     pub(crate) push_notifications: bool,
 
     #[serde(default = "default_false", alias = "idle", alias = "idle_disc")]
